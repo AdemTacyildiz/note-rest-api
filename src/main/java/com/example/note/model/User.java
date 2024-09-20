@@ -1,6 +1,8 @@
 package com.example.note.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
 
 @Entity
 @Table(name = "users")
@@ -22,11 +24,16 @@ public class User {
     @Column(name = "username", unique = true, nullable = false)
     private String username;
 
+
     @Column(name = "password", nullable = false)
     private String password;
 
     // Boş constructor
     public User() {
+    }
+
+    public User( Long id,String username){
+        this.username = username;
     }
 
     // Parametreli constructor

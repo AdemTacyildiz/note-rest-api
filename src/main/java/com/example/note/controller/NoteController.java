@@ -7,6 +7,10 @@ import com.example.note.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,9 +19,7 @@ import java.util.List;
 @RequestMapping("/api/notes")
 public class NoteController {
 
-
     private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
-
 
     @Autowired
     private NoteService noteService;
@@ -25,79 +27,100 @@ public class NoteController {
     @Autowired
     private UserService userService;
 
+    private User getCurrentUser() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userService.findByUsername(userDetails.getUsername());
+    }
 
     @PostMapping
-    public Note createNote(@RequestParam String username, @RequestBody Note note) {
+    public ResponseEntity<Object> createNote(@RequestBody Note note) {
         logger.info("Yeni not oluşturma isteği alındı.");
-        User user = userService.findByUsername(username);
+        User user = getCurrentUser();
         if (user != null) {
             note.setUser(user);
-
-            return noteService.save(note);
+            Note savedNote = noteService.save(note);
+            return  new ResponseEntity<>(savedNote, HttpStatus.CREATED);
         }
-
-        return null;
+        return new ResponseEntity<>("Kullanıcı bulunamadı.", HttpStatus.UNAUTHORIZED);
     }
-
 
     @GetMapping
-    public List<Note> getNotes(@RequestParam String username) {
+    public ResponseEntity<Object> getNotes() {
         logger.info("Kullanıcıya ait notları getirme isteği alındı.");
-        User user = userService.findByUsername(username);
+        User user = getCurrentUser();
         if (user != null) {
-            return noteService.getNotesByUser(user);
+            List<Note> notes = noteService.getNotesByUser(user);
+            return new ResponseEntity<>(notes, HttpStatus.OK);
         }
-        return null;
+        return new ResponseEntity<>("Kullanıcı bulunamadı.", HttpStatus.UNAUTHORIZED);
     }
-
 
     @GetMapping("/{id}")
-    public Note getNoteById(@PathVariable Long id, @RequestParam String username) {
+    public ResponseEntity<Object> getNoteById(@PathVariable  Long id) {
         logger.info("Not bilgilerini getirme isteği alındı.");
-
-        User user = userService.findByUsername(username);
+        User user = getCurrentUser();
         if (user != null) {
             Note note = noteService.findById(id);
-            if (note != null && note.getUser().equals(user)) {
-                return note;
-            }
-        }
-        return null;
-    }
 
-    // Bu metod, var olan bir notu güncellemek için PUT isteklerini karşılar.
-    // 'username' ile doğrulama yapılır ve notun sahibi ile kullanıcı eşleşirse, notun başlık ve açıklama bilgileri güncellenir ve kaydedilir.
-    // Kullanıcı notun sahibi değilse 'null' döner.
+            if (note != null) {
+                if (note.getUser().equals(user)) {
+                    return new ResponseEntity<>(note, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("Aranan id bulunamadı.", HttpStatus.FORBIDDEN);
+                }
+            }
+            else{
+                     return new ResponseEntity<>("Not bulunamadı.", HttpStatus.NOT_FOUND);
+                }
+            }
+        return new ResponseEntity<>("Kullanıcı bulunamadı.", HttpStatus.UNAUTHORIZED);
+        }
 
     @PutMapping("/{id}")
-    public Note updateNote(@PathVariable Long id, @RequestParam String username, @RequestBody Note updatedNote) {
+    public ResponseEntity<Object> updateNote(@PathVariable Long id, @RequestBody Note updatedNote) {
         logger.info("Not güncelleme isteği alındı.");
-        User user = userService.findByUsername(username);
+
+        User user = getCurrentUser();
         if (user != null) {
             Note existingNote = noteService.findById(id);
-            if (existingNote != null && existingNote.getUser().equals(user)) {
-                existingNote.setBaslik(updatedNote.getBaslik());
-                existingNote.setAciklama(updatedNote.getAciklama());
-                return noteService.save(existingNote);
+            if (existingNote != null) {
+                if (existingNote.getUser().equals(user)) {
+                    existingNote.setBaslik(updatedNote.getBaslik());
+                    existingNote.setAciklama(updatedNote.getAciklama());
+                    Note savedNote = noteService.save(existingNote);
+                    return new ResponseEntity<>(savedNote, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("Aranan id bulunamadı.", HttpStatus.FORBIDDEN);
+                }
+            }
+            else{
+                return new ResponseEntity<>("Not bulunamadı.", HttpStatus.NOT_FOUND);
             }
         }
-        return null;
+        return new ResponseEntity<>("Kullanıcı bulunamadı.", HttpStatus.UNAUTHORIZED);
     }
 
-    // Bu metod, bir notu silmek için DELETE isteklerini karşılar.
-    // 'username' ile kullanıcı doğrulaması yapılır, ardından notun sahibi doğrulanırsa not silinir. Aksi takdirde işlem yapılmaz.
 
     @DeleteMapping("/{id}")
-    public void deleteNote(@PathVariable Long id, @RequestParam String username) {
+    public ResponseEntity<Object> deleteNote(@PathVariable Long id) {
         logger.info("Not silme isteği alındı.");
-        User user = userService.findByUsername(username);
-        if (user != null) {
-            Note existingNote = noteService.findById(id);
-            if (existingNote != null && existingNote.getUser().equals(user)) {
-                noteService.delete(id);
+        User user = getCurrentUser();
+        if(user != null){
+            Note existinNote = noteService.findById(id);
+            if (existinNote != null) {
+                if (existinNote.getUser().equals(user)) {
+
+                    noteService.delete(id);
+                    return new ResponseEntity<>("Not başarıyla silindi.", HttpStatus.OK);
+
+                }
+                else {
+                    return new ResponseEntity<>("Aranan id bulunamadı.", HttpStatus.FORBIDDEN);
+                }
+            }else {
+                return new ResponseEntity<>("Not bulunamadı.", HttpStatus.NOT_FOUND);
             }
         }
+        return new ResponseEntity<>("Kullanıcı bulunamadı.", HttpStatus.UNAUTHORIZED);
     }
-
-
 }

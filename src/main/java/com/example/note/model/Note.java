@@ -1,9 +1,13 @@
 package com.example.note.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Data;
 
+@Data
 @Entity // Bu sınıfın bir JPa entity olduğunu belirtir,yani bir veritabanı tablosuna karşılık gelir
 @Table(name = "notes")// Bu entity'nin veritabanındaki tablo adının "notes" olduğunu belirtir
+@JsonIgnoreProperties({"user.password"})
 public class Note {
 
     @Id // Bu alanın birincil anahtar olduğunu belirtir
@@ -20,47 +24,4 @@ public class Note {
     @Column(name = "aciklama")
     private String aciklama;
 
-    // Boş constructor
-    public Note() {
-    }
-
-    // Parametreli constructor
-    public Note(User user, String baslik, String aciklama) {
-        this.user = user;
-        this.baslik = baslik;
-        this.aciklama = aciklama;
-    }
-
-    // Getter ve Setter metotları
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getBaslik() {
-        return baslik;
-    }
-
-    public void setBaslik(String baslik) {
-        this.baslik = baslik;
-    }
-
-    public String getAciklama() {
-        return aciklama;
-    }
-
-    public void setAciklama(String aciklama) {
-        this.aciklama = aciklama;
-    }
 }
