@@ -37,7 +37,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())  // CSRF korumasını devre dışı bırak
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/register", "/api/users/login").permitAll() // Kayıt ve login açık
+                        .requestMatchers("/api/user/register", "/api/user/login").permitAll() // Kayıt ve login açık
                         .anyRequest().authenticated() // Diğer tüm istekler kimlik doğrulama gerektirir
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));  // JWT ile stateful session yönetimi
