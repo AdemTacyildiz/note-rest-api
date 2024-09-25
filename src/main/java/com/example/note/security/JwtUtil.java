@@ -25,7 +25,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(username)// Token'ın konusu (subject) kullanıcı adı olarak belirlenir
                 .setIssuedAt(new Date())// Token'ın oluşturulma tarihi ayarlanır
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token geçerlilik süresi 10 saat
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 100)) // Token geçerlilik süresi 10 saat
                 .signWith(secretKey)// Token, gizli anahtar ile imzalanır
                 .compact();// Token oluşturulur ve sıkıştırılır (compact), döndürülmeye hazır hale getirilir
     }
